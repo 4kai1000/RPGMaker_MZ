@@ -18,7 +18,7 @@
 */
 
 (() => {
-"use strict";
+'use strict';
 
 const _Game_Action_makeDamageValue =
 Game_Action.prototype.makeDamageValue;
