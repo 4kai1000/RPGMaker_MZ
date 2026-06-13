@@ -1,14 +1,14 @@
 /*:
- * @target MZ
- * @plugindesc ステルスエネミー
- * @author 尸解仙ましゅまろ
- *
- * @help
- * 特徴を有するメモ欄に不透明度を書きます。
- *
- * <stealth:不透明度>
- *
- */
+@target MZ
+@plugindesc ステルスエネミー
+@author 尸解仙ましゅまろ
+
+@help
+特徴を有するメモ欄に不透明度を書きます。
+
+<stealth:不透明度>
+
+*/
 
 (() => {
 
