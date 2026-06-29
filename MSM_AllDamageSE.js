@@ -1,54 +1,101 @@
 /*:
 @target MZ
-@plugindesc MPダメージ・吸収時にもダメージSEを再生
+@plugindesc MP0で戦闘不能になるプラグイン
 @author 尸解仙ましゅまろ
-
+ 
 @help
-MPダメージ、HP・MPダメージのタイミングに
-HPダメージと同じ効果音を再生します。
-(他の効果音系プラグインと競合する可能性があります。)
+MP0になると戦闘不能になります、鬼畜。
+
 */
 
 (() => {
-'use strict';
 
-const _Game_Action_apply = Game_Action.prototype.apply;
+function Window_BattleNotice() {
+    this.initialize(...arguments);
+}
 
-Game_Action.prototype.apply = function(target) {
+Window_BattleNotice.prototype = Object.create(Window_Base.prototype);
+Window_BattleNotice.prototype.constructor = Window_BattleNotice;
 
-    _Game_Action_apply.call(this, target);
+Window_BattleNotice.prototype.initialize = function(rect) {
+    Window_Base.prototype.initialize.call(this, rect);
 
-    const type = this.item().damage.type;
+    this.openness = 0;
+    this.opacity = 192;
+    this.contentsOpacity = 0;
 
-    target._isDrainDamage =
-        (type === 5 || type === 6) &&
-        (target.result().hpDamage > 0 ||
-         target.result().mpDamage > 0);
+    this._duration = 0;
 };
 
-const _Sprite_Damage_setup =Sprite_Damage.prototype.setup;
+Window_BattleNotice.prototype.showNotice = function(text) {
 
-Sprite_Damage.prototype.setup = function(target) {
+    this.contents.clear();
 
-    const result = target.result();
+    this.drawText(text, 0, 0, this.contentsWidth(), "center");
 
-    const isMpDamage = result.mpDamage > 0;
-    const isDrain = target._isDrainDamage;
-                    
-    const needSe = (isMpDamage||isDrain);
+    this.open();
 
-    if(needSe){
-        if(target.isActor()){ 
-            SoundManager.playActorDamage();
-        }else{
-            SoundManager.playEnemyDamage();
+    this.contentsOpacity = 255;
+
+    this._duration = 150;     // 90フレーム表示
+};
+
+Window_BattleNotice.prototype.update = function() {
+
+    Window_Base.prototype.update.call(this);
+
+    if (this._duration > 0) {
+
+        this._duration--;
+
+        if (this._duration <= 0) {
+            this.close();
+        }
+    }
+};
+
+const _Scene_Battle_createAllWindows =
+Scene_Battle.prototype.createAllWindows;
+
+Scene_Battle.prototype.createAllWindows = function() {
+
+    _Scene_Battle_createAllWindows.call(this);
+
+    const w = 400;
+    const h = 72;
+
+    const rect = new Rectangle(
+        (Graphics.boxWidth - w) / 2,
+        Graphics.boxHeight / 2 - 120,
+        w,
+        h
+    );
+
+    this._noticeWindow = new Window_BattleNotice(rect);
+
+    this.addWindow(this._noticeWindow);
+};
+
+const _BattleManager_endAction = BattleManager.endAction;
+
+BattleManager.endAction = function() {
+
+    const subject = this._subject;
+
+    if (subject && subject.mp <= 0 && subject.hp > 0) {
+        
+        SceneManager._scene._noticeWindow.showNotice(
+           subject.name() + "はMPを使い果たした！"
+        );
+        subject.gainHp(-subject.hp);
+
+        if (subject.isEnemy()) {
+            subject.performCollapse();
         }
     }
 
-    _Sprite_Damage_setup.call(this, target);
-    target._isDrainDamage = false;
-
+    _BattleManager_endAction.call(this);
 };
 
-})();
 
+})();
